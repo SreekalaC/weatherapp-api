@@ -1,0 +1,85 @@
+using Microsoft.Extensions.Caching.Memory;
+using Moq;
+using Newtonsoft.Json;
+using Polly.CircuitBreaker;
+using Polly;
+using weatherapp_api.Interfaces.BLL;
+using weatherapp_api.Interfaces.DAL;
+using weatherapp_api.Models;
+using weatherapp_api.Models.BLL;
+using weatherapp_api.Models.DAL;
+
+namespace weatherapp_api.Tests
+{
+    public class WeatherTest
+    {
+        [Fact]
+        public async Task GetCurrentWeatherByZipCode_Success()
+        {
+
+            string weatherJson = @"{
+            ""location"": {
+                ""name"": ""New York"",
+                ""region"": ""New York"",
+                ""country"": ""USA"",
+                ""lat"": 40.75,
+                ""lon"": -73.99,
+                ""tz_id"": ""America/New_York"",
+                ""localtime_epoch"": 1704437421,
+                ""localtime"": ""2024-01-05 1:50""
+            },
+            ""current"": {
+                ""last_updated_epoch"": 1704437100,
+                ""last_updated"": ""2024-01-05 01:45"",
+                ""temp_c"": -2.2,
+                ""temp_f"": 28.0,
+                ""is_day"": 0,
+                ""condition"": {
+                    ""text"": ""Clear"",
+                    ""icon"": ""//cdn.weatherapi.com/weather/64x64/night/113.png"",
+                    ""code"": 1000
+                },
+                ""wind_mph"": 9.4,
+                ""wind_kph"": 15.1,
+                ""wind_degree"": 300,
+                ""wind_dir"": ""WNW"",
+                ""pressure_mb"": 1024.0,
+                ""pressure_in"": 30.23,
+                ""precip_mm"": 0.0,
+                ""precip_in"": 0.0,
+                ""humidity"": 48,
+                ""cloud"": 0,
+                ""feelslike_c"": -8.4,
+                ""feelslike_f"": 16.8,
+                ""vis_km"": 16.0,
+                ""vis_miles"": 9.0,
+                ""uv"": 1.0,
+                ""gust_mph"": 18.2,
+                ""gust_kph"": 29.3,
+                ""air_quality"": {
+                    ""co"": 273.7,
+                    ""no2"": 7.5,
+                    ""o3"": 78.0,
+                    ""so2"": 1.3,
+                    ""pm2_5"": 0.8,
+                    ""pm10"": 1.7,
+                    ""us-epa-index"": 1,
+                    ""gb-defra-index"": 1
+                }
+            }
+        }";
+
+
+            var expectedWeatherData = JsonConvert.DeserializeObject<WeatherData>(weatherJson);
+            var mockWeatherDAL = new Mock<IWeatherDAL>();
+            mockWeatherDAL.Setup(dal => dal.GetCurrentWeatherByZipCode(It.IsAny<string>()))
+                          .ReturnsAsync(expectedWeatherData);
+
+            var weatherBLL = new WeatherBLL(mockWeatherDAL.Object); 
+            var result = await weatherBLL.GetCurrentWeatherByZipCode("10001");
+            Assert.NotNull(result);
+            Assert.Same(expectedWeatherData, result);
+
+        }
+    }
+}
